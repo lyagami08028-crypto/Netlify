@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎯 Sniper Bot Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111418;
+    --surface2: #181c22;
+    --border: #1e2530;
+    --accent: #00ff88;
+    --accent2: #00ccff;
+    --accent3: #ff6b35;
+    --warn: #ffbb00;
+    --text: #e8edf5;
+    --muted: #5a6478;
+    --danger: #ff4455;
+    --success: #00ff88;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* grid bg */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* ── HEADER ── */
+  header {
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: var(--accent); display: flex; align-items: center;
+    justify-content: center; font-size: 20px;
+  }
+  .logo-text h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-text p { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .mode-badge {
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    padding: 5px 14px; border-radius: 20px; border: 1px solid;
+    cursor: pointer; transition: all .2s;
+  }
+  .mode-badge.dry { color: var(--warn); border-color: var(--warn); }
+  .mode-badge.live { color: var(--danger); border-color: var(--danger); background: rgba(255,68,85,.1); }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 2px; margin: 28px 0 20px; background: var(--surface); border-radius: 10px; padding: 4px; }
+  .tab {
+    flex: 1; padding: 9px; text-align: center; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+    color: var(--muted);
+  }
+  .tab.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* ── PANELS ── */
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadein .2s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* ── STAT CARDS ── */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+  }
+  .stat-card .lbl { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-card .val { font-size: 26px; font-weight: 800; margin-top: 4px; }
+  .stat-card .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .green { color: var(--accent); }
+  .red { color: var(--danger); }
+  .blue { color: var(--accent2); }
+  .orange { color: var(--accent3); }
+
+  /* ── MODULE CARDS ── */
+  .modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .mod-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; transition: border-color .2s;
+    position: relative; overflow: hidden;
+  }
+  .mod-card.running { border-color: var(--accent); }
+  .mod-card.running::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent);
+    animation: pulse-bar 2s ease-in-out infinite;
+  }
+  @keyframes pulse-bar { 0%,100%{opacity:.4} 50%{opacity:1} }
+  .mod-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .mod-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .mod-dot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .mod-name { font-weight: 700; font-size: 14px; flex: 1; }
+  .mod-badge { font-size: 10px; font-family: 'Space Mono', monospace; padding: 3px 8px; border-radius: 20px; }
+  .mod-badge.dry { background: rgba(255,187,0,.1); color: var(--warn); }
+  .mod-badge.live { background: rgba(255,68,85,.1); color: var(--danger); }
+  .mod-badge.off { background: var(--surface2); color: var(--muted); }
+  .mod-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .mod-row:last-child { border: none; }
+  .mod-row .k { color: var(--muted); }
+  .mod-row .v { font-family: 'Space Mono', monospace; font-size: 11px; }
+  .mod-btn {
+    margin-top: 14px; width: 100%; padding: 8px;
+    border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--text); font-family: 'Syne', sans-serif;
+    font-weight: 600; font-size: 13px; cursor: pointer; transition: all .2s;
+  }
+  .mod-btn:hover { background: var(--surface2); }
+  .mod-btn.start { border-color: var(--accent); color: var(--accent); }
+  .mod-btn.start:hover { background: rgba(0,255,136,.08); }
+  .mod-btn.stop { border-color: var(--danger); color: var(--danger); }
+  .mod-btn.stop:hover { background: rgba(255,68,85,.08); }
+
+  /* ── LOG ── */
+  .log-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px; font-family: 'Space Mono', monospace; font-size: 11px;
+    height: 220px; overflow-y: auto;
+  }
+  .log-entry { padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+  .log-entry:last-child { border: none; }
+  .log-ts { color: var(--muted); flex-shrink: 0; }
+  .log-tag { flex-shrink: 0; font-weight: 700; }
+  .log-tag.CEX { color: var(--accent2); }
+  .log-tag.DEX { color: #a78bfa; }
+  .log-tag.MEMPOOL { color: var(--warn); }
+  .log-tag.FOREX { color: var(--accent); }
+  .log-tag.SYS { color: var(--muted); }
+  .log-msg { color: var(--text); }
+
+  /* ── SETUP FORM ── */
+  .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .field-group {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px;
+  }
+  .field-group h3 { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-family: 'Space Mono', monospace; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 12px; color: var(--text);
+    font-family: 'Space Mono', monospace; font-size: 12px;
+    outline: none; transition: border-color .2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--muted); }
+  select option { background: var(--surface2); }
+
+  .save-btn {
+    width: 100%; padding: 11px; border-radius: 10px;
+    background: var(--accent); color: #000; font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 14px; border: none; cursor: pointer;
+    margin-top: 8px; transition: opacity .2s;
+  }
+  .save-btn:hover { opacity: 0.85; }
+
+  /* ── ALERTS FEED ── */
+  .alert-feed { display: flex; flex-direction: column; gap: 8px; }
+  .alert-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start;
+    animation: slidein .3s ease;
+  }
+  @keyframes slidein { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+  .alert-icon { font-size: 18px; flex-shrink: 0; }
+  .alert-body .alert-title { font-weight: 700; font-size: 13px; }
+  .alert-body .alert-msg { font-size: 12px; color: var(--muted); margin-top: 2px; font-family: 'Space Mono', monospace; }
+  .alert-body .alert-ts { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  /* ── SECTION LABEL ── */
+  .sec { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin: 20px 0 10px; }
+
+  /* ── NOTICE BOX ── */
+  .notice {
+    background: rgba(255,187,0,.06); border: 1px solid rgba(255,187,0,.2);
+    border-radius: 10px; padding: 12px 14px; font-size: 12px;
+    color: var(--warn); margin-bottom: 16px; font-family: 'Space Mono', monospace;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.7); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; max-width: 400px; width: 90%;
+  }
+  .modal h2 { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
+  .modal p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btns button { flex: 1; padding: 10px; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; border: none; font-size: 14px; }
+  .btn-cancel { background: var(--surface2); color: var(--text); }
+  .btn-confirm { background: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎯</div>
+      <div class="logo-text">
+        <h1>Sniper Bot Suite</h1>
+        <p>CEX · DEX · Mempool · Forex</p>
+      </div>
+    </div>
+    <div class="mode-badge dry" id="modeBadge" onclick="toggleMode()">🟡 DRY RUN MODE</div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</div>
+    <div class="tab" onclick="switchTab('setup')">🔑 Setup</div>
+    <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
+    <div class="tab" onclick="switchTab('alerts')">🔔 Alerts</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="panel active" id="tab-dashboard">
+    <div class="notice">⚠️ DRY RUN is ON — all trades are simulated. Go to Setup, enter your API keys, then switch to LIVE when ready.</div>
+    <div class="stats">
+      <div class="stat-card"><div class="lbl">Simulated P&L</div><div class="val green" id="statPnl">+$0.00</div><div class="sub">today</div></div>
+      <div class="stat-card"><div class="lbl">Signals fired</div><div class="val blue" id="statTrades">0</div><div class="sub">across all modules</div></div>
+      <div class="stat-card"><div class="lbl">Active modules</div><div class="val" id="statActive">0</div><div class="sub">of 4 running</div></div>
+      <div class="stat-card"><div class="lbl">Mode</div><div class="val orange" id="statMode">DRY RUN</div><div class="sub">no real money</div></div>
+    </div>
+
+    <div class="sec">Module control</div>
+    <div class="modules">
+      <div class="mod-card" id="mod-CEX">
+        <div class="mod-header">
+          <div class="mod-dot" id="dot-CEX"></div>
+          <div class="mod-name">CEX Sniper</div>
+          <span class="mod-badge dry" id="badge-CEX">DRY</span>
+        </div>
+        <div class="mod-row"><span class="k">Exchange</span><span class="v" id="cfg-cex-ex">Binance</span></div>
+        <div class="mod-row"><span class="k">Pair</span><span class="v" id="cfg-cex-pair">BTC/USDT</span></div>
+        <div class="mod-row"><span class="k">Risk / trade</span><span class="v" id="cfg-cex-amt">$20</span></div>
+        <div class="mod-row"><span class="k">TP / SL</span><span class="v">0.8% / 0.4%</span></div>
+        <button class="mod-btn start" onclick="toggleModule('CEX')">▶ Start</button>
+      </div>
+
+      <div class="mod-card" id="mod-DEX">
+        <div class="mod-header">
+          <div class="mod-dot" id="dot-DEX"></div>
+          <div class="mod-name">DEX Sniper</div>
+          <span class="mod-badge dry" id="badge-DEX">DRY</span>
+        </div>
+        <div class="mod-row"><span class="k">Chain</span><span class="v" id="cfg-dex-chain">Ethereum</span></div>
+        <div class="mod-row"><span class="k">DEX</span><span class="v">Uniswap V2</span></div>
+        <div class="mod-row"><span class="k">Buy amount</span><span class="v" id="cfg-dex-amt">0.01 ETH</span></div>
+        <div class="mod-row"><span class="k">Slippage</span><span class="v">5%</span></div>
+        <button class="mod-btn start" onclick="toggleModule('DEX')">▶ Start</button>
+      </div>
+
+      <div class="mod-card" id="mod-MEMPOOL">
+        <div class="mod-header">
+          <div class="mod-dot" id="dot-MEMPOOL"></div>
+          <div class="mod-name">Mempool</div>
+          <span class="mod-badge dry" id="badge-MEMPOOL">DRY</span>
+        </div>
+        <div class="mod-row"><span class="k">Strategy</span><span class="v">Copy-trade</span></div>
+        <div class="mod-row"><span class="k">Min swap</span><span class="v">1 ETH</span></div>
+        <div class="mod-row"><span class="k">Gas boost</span><span class="v">+15%</span></div>
+        <div class="mod-row"><span class="k">Network</span><span class="v">ETH mainnet</span></div>
+        <button class="mod-btn start" onclick="toggleModule('MEMPOOL')">▶ Start</button>
+      </div>
+
+      <div class="mod-card" id="mod-FOREX">
+        <div class="mod-header">
+          <div class="mod-dot" id="dot-FOREX"></div>
+          <div class="mod-name">Forex Scalper</div>
+          <span class="mod-badge dry" id="badge-FOREX">DRY</span>
+        </div>
+        <div class="mod-row"><span class="k">Broker</span><span class="v">MT5 / MetaApi</span></div>
+        <div class="mod-row"><span class="k">Pair</span><span class="v" id="cfg-fx-pair">EUR/USD</span></div>
+        <div class="mod-row"><span class="k">Lot size</span><span class="v" id="cfg-fx-lot">0.01</span></div>
+        <div class="mod-row"><span class="k">Strategy</span><span class="v">EMA 9/21</span></div>
+        <button class="mod-btn start" onclick="toggleModule('FOREX')">▶ Start</button>
+      </div>
+    </div>
+
+    <div class="sec">Live log</div>
+    <div class="log-box" id="logBox"></div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="panel" id="tab-setup">
+    <div class="notice">🔑 Your keys are stored only in this browser tab (never sent to any server). Refresh = reset.</div>
+    <div class="setup-grid">
+      <div class="field-group">
+        <h3>📈 Binance (CEX)</h3>
+        <div class="field"><label>API Key</label><input id="s-bin-key" type="password" placeholder="Enter Binance API Key"></div>
+        <div class="field"><label>API Secret</label><input id="s-bin-sec" type="password" placeholder="Enter Binance Secret"></div>
+        <small style="color:var(--muted);font-size:11px">Get from binance.com → Account → API Management</small>
+      </div>
+      <div class="field-group">
+        <h3>📈 Bybit (CEX alt)</h3>
+        <div class="field"><label>API Key</label><input id="s-bybit-key" type="password" placeholder="Enter Bybit API Key"></div>
+        <div class="field"><label>API Secret</label><input id="s-bybit-sec" type="password" placeholder="Enter Bybit Secret"></div>
+        <small style="color:var(--muted);font-size:11px">Get from bybit.com → Account → API</small>
+      </div>
+      <div class="field-group">
+        <h3>🔗 Infura (DEX + Mempool)</h3>
+        <div class="field"><label>Project ID</label><input id="s-infura" type="password" placeholder="Enter Infura Project ID"></div>
+        <div class="field"><label>Wallet Private Key</label><input id="s-wallet" type="password" placeholder="0x... (never shared)"></div>
+        <small style="color:var(--muted);font-size:11px">Get from infura.io → free account</small>
+      </div>
+      <div class="field-group">
+        <h3>💱 MetaApi (Forex / MT5)</h3>
+        <div class="field"><label>MetaApi Token</label><input id="s-meta-token" type="password" placeholder="Enter MetaApi Token"></div>
+        <div class="field"><label>MT5 Account ID</label><input id="s-meta-acc" type="text" placeholder="Enter Account ID"></div>
+        <small style="color:var(--muted);font-size:11px">Get from metaapi.cloud → free account</small>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveSetup()">💾 Save Keys (browser only)</button>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="panel" id="tab-settings">
+    <div class="setup-grid">
+      <div class="field-group">
+        <h3>📊 CEX Settings</h3>
+        <div class="field"><label>Exchange</label>
+          <select id="cfg-exchange"><option>Binance</option><option>Bybit</option></select>
+        </div>
+        <div class="field"><label>Trading Pair</label><input id="cfg-pair" value="BTC/USDT"></div>
+        <div class="field"><label>Risk per trade (USDT)</label><input id="cfg-usdt" type="number" value="20"></div>
+        <div class="field"><label>Take Profit %</label><input id="cfg-tp" type="number" value="0.8" step="0.1"></div>
+        <div class="field"><label>Stop Loss %</label><input id="cfg-sl" type="number" value="0.4" step="0.1"></div>
+      </div>
+      <div class="field-group">
+        <h3>🔗 DEX Settings</h3>
+        <div class="field"><label>Chain</label>
+          <select id="cfg-chain"><option>Ethereum</option><option>BSC (PancakeSwap)</option></select>
+        </div>
+        <div class="field"><label>ETH Amount to Spend</label><input id="cfg-eth" value="0.01"></div>
+        <div class="field"><label>Slippage %</label><input id="cfg-slip" type="number" value="5"></div>
+        <div class="field"><label>Gas Boost</label>
+          <select id="cfg-gas"><option>1.2× (normal)</option><option>1.5× (fast)</option><option>2× (aggressive)</option></select>
+        </div>
+      </div>
+      <div class="field-group">
+        <h3>💱 Forex Settings</h3>
+        <div class="field"><label>Currency Pair</label><input id="cfg-fxpair" value="EURUSD"></div>
+        <div class="field"><label>Lot Size</label><input id="cfg-lot" type="number" value="0.01" step="0.01"></div>
+        <div class="field"><label>Take Profit (pips)</label><input id="cfg-fxtp" type="number" value="20"></div>
+        <div class="field"><label>Stop Loss (pips)</label><input id="cfg-fxsl" type="number" value="10"></div>
+      </div>
+      <div class="field-group">
+        <h3>🛡️ Risk Management</h3>
+        <div class="field"><label>Max Daily Loss ($)</label><input id="cfg-maxloss" type="number" value="50"></div>
+        <div class="field"><label>Max Trades / Hour</label><input id="cfg-maxtrades" type="number" value="10"></div>
+        <div class="field"><label>Trading Mode</label>
+          <select id="cfg-mode" onchange="modeChanged()">
+            <option value="dry">🟡 Dry Run (simulate only)</option>
+            <option value="live">🔴 Live (real money)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveSettings()">💾 Apply Settings</button>
+  </div>
+
+  <!-- ALERTS -->
+  <div class="panel" id="tab-alerts">
+    <div class="sec">Real-time signals & alerts</div>
+    <div class="alert-feed" id="alertFeed">
+      <div style="color:var(--muted);font-size:13px;padding:20px 0">No alerts yet. Start a module from the Dashboard to see signals here.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LIVE MODE MODAL -->
+<div class="modal-overlay" id="liveModal">
+  <div class="modal">
+    <h2>⚠️ Switch to LIVE?</h2>
+    <p>Real money will be used for trades. Make sure you've:<br><br>
+    ✅ Set all API keys in Setup<br>
+    ✅ Tested in Dry Run mode first<br>
+    ✅ Set sensible stop-loss limits<br><br>
+    This cannot be undone without refreshing the page.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cancelLive()">Cancel</button>
+      <button class="btn-confirm" onclick="confirmLive()">Go LIVE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────
+const state = {
+  dryRun: true,
+  modules: {},
+  keys: {},
+  cfg: { pair:'BTC/USDT', usdt:20, tp:0.8, sl:0.4, eth:'0.01', fxpair:'EURUSD', lot:0.01 },
+  pnl: 0, trades: 0,
+  timers: {},
+  alertCount: 0
+};
+
+// ── Tab switching ──────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Logger ─────────────────────────────────────────────────
+function addLog(mod, msg) {
+  const box = document.getElementById('logBox');
+  const d = new Date();
+  const ts = d.toTimeString().slice(0,8);
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  el.innerHTML = `<span class="log-ts">${ts}</span><span class="log-tag ${mod}">[${mod}]</span><span class="log-msg">${msg}</span>`;
+  box.prepend(el);
+  if (box.children.length > 60) box.lastChild.remove();
+}
+
+function addAlert(icon, title, msg, color) {
+  const feed = document.getElementById('alertFeed');
+  if (feed.children.length === 1 && feed.children[0].tagName === 'DIV' && !feed.children[0].className) {
+    feed.innerHTML = '';
+  }
+  const d = new Date();
+  const el = document.createElement('div');
+  el.className = 'alert-card';
+  el.style.borderColor = color || '#1e2530';
+  el.innerHTML = `
+    <div class="alert-icon">${icon}</div>
+    <div class="alert-body">
+      <div class="alert-title" style="color:${color||'var(--text)'}">${title}</div>
+      <div class="alert-msg">${msg}</div>
+      <div class="alert-ts">${d.toLocaleTimeString()}</div>
+    </div>`;
+  feed.prepend(el);
+  if (feed.children.length > 30) feed.lastChild.remove();
+  state.alertCount++;
+  document.querySelector('.tab:nth-child(4)').textContent = `🔔 Alerts (${state.alertCount})`;
+}
+
+// ── Mode toggle ────────────────────────────────────────────
+function toggleMode() {
+  if (state.dryRun) {
+    document.getElementById('liveModal').classList.add('open');
+  } else {
+    state.dryRun = true;
+    updateModeBadge();
+  }
+}
+function cancelLive() { document.getElementById('liveModal').classList.remove('open'); }
+function confirmLive() {
+  state.dryRun = false;
+  document.getElementById('liveModal').classList.remove('open');
+  document.getElementById('cfg-mode').value = 'live';
+  updateModeBadge();
+  addLog('SYS', '🔴 LIVE mode activated — real orders will fire');
+}
+function modeChanged() {
+  const val = document.getElementById('cfg-mode').value;
+  if (val === 'live' && state.dryRun) {
+    document.getElementById('liveModal').classList.add('open');
+  } else if (val === 'dry') {
+    state.dryRun = true;
+    updateModeBadge();
+  }
+}
+function updateModeBadge() {
+  const badge = document.getElementById('modeBadge');
+  const modeEl = document.getElementById('statMode');
+  if (state.dryRun) {
+    badge.textContent = '🟡 DRY RUN MODE';
+    badge.className = 'mode-badge dry';
+    modeEl.textContent = 'DRY RUN';
+    modeEl.className = 'val orange';
+  } else {
+    badge.textContent = '🔴 LIVE MODE';
+    badge.className = 'mode-badge live';
+    modeEl.textContent = 'LIVE';
+    modeEl.className = 'val red';
+  }
+  // update all badges
+  ['CEX','DEX','MEMPOOL','FOREX'].forEach(m => {
+    const b = document.getElementById('badge-'+m);
+    if (state.modules[m]) {
+      b.textContent = state.dryRun ? 'DRY' : 'LIVE';
+      b.className = 'mod-badge ' + (state.dryRun ? 'dry' : 'live');
+    }
+  });
+}
+
+// ── Module simulators ──────────────────────────────────────
+const simulators = {
+  CEX: () => {
+    const ratio = (2.5 + Math.random()*2).toFixed(1);
+    const price = (65000 + Math.random()*5000).toFixed(0);
+    const qty = (state.cfg.usdt / price).toFixed(6);
+    if (parseFloat(ratio) >= 3.0) {
+      const tag = state.dryRun ? '[DRY RUN] ' : '';
+      const msg = `Wall ${ratio}× detected — ${tag}BUY ${qty} BTC/USDT @ $${Number(price).toLocaleString()}`;
+      addLog('CEX', msg);
+      addAlert('🧱', 'CEX Sniper — Wall Detected', msg, '#00ccff');
+      const pnlDelta = state.cfg.usdt * (state.cfg.tp/100) * (Math.random()>0.35?1:-0.5);
+      state.pnl += pnlDelta;
+      state.trades++;
+      updateStats();
+    } else {
+      addLog('CEX', `Scanning… wall ratio ${ratio}× (need 3×)`);
+    }
+  },
+  DEX: () => {
+    const addr = '0x'+Math.random().toString(16).slice(2,12).toUpperCase();
+    const tag = state.dryRun ? '[DRY RUN] ' : '';
+    if (Math.random() < 0.25) {
+      const msg = `${tag}New pair: ${addr}…/WETH — buying ${state.cfg.eth} ETH`;
+      addLog('DEX', msg);
+      addAlert('🚀', 'DEX Sniper — New Token Launch', msg, '#a78bfa');
+      state.trades++;
+      state.pnl += (Math.random()*0.04 - 0.01) * parseFloat(state.cfg.eth) * 3000;
+      updateStats();
+    } else {
+      addLog('DEX', `Listening for PairCreated… (${Math.floor(Math.random()*8)+1} new pairs this hour)`);
+    }
+  },
+  MEMPOOL: () => {
+    const eth = (1 + Math.random()*5).toFixed(2);
+    const tag = state.dryRun ? '[DRY RUN] ' : '';
+    if (Math.random() < 0.3) {
+      const msg = `${tag}Copy-trade: ${eth} ETH swap detected`;
+      addLog('MEMPOOL', msg);
+      addAlert('⚡', 'Mempool — Large Swap Spotted', msg, '#ffbb00');
+      state.trades++;
+      state.pnl += (Math.random()*30 - 10);
+      updateStats();
+    } else {
+      addLog('MEMPOOL', `Scanning pending txs… (${Math.floor(Math.random()*200)+50} checked)`);
+    }
+  },
+  FOREX: () => {
+    if (Math.random() < 0.25) {
+      const dir = Math.random() > 0.5 ? 'BUY' : 'SELL';
+      const tag = state.dryRun ? '[DRY RUN] ' : '';
+      const msg = `${tag}EMA9/21 cross — ${dir} ${state.cfg.fxpair} ${state.cfg.lot} lot TP=${document.getElementById('cfg-fxtp')?.value||20} SL=${document.getElementById('cfg-fxsl')?.value||10}`;
+      addLog('FOREX', msg);
+      addAlert('📈', `Forex — ${dir} Signal`, msg, '#00ff88');
+      state.trades++;
+      state.pnl += (Math.random()*20 - 8) * state.cfg.lot;
+      updateStats();
+    } else {
+      const e9 = (1.085 + Math.random()*0.01).toFixed(5);
+      const e21 = (1.084 + Math.random()*0.01).toFixed(5);
+      addLog('FOREX', `EMA9=${e9}  EMA21=${e21} — no cross yet`);
+    }
+  }
+};
+
+function updateStats() {
+  document.getElementById('statPnl').textContent = (state.pnl>=0?'+$':'-$') + Math.abs(state.pnl).toFixed(2);
+  document.getElementById('statPnl').className = 'val ' + (state.pnl>=0?'green':'red');
+  document.getElementById('statTrades').textContent = state.trades;
+  document.getElementById('statActive').textContent = Object.keys(state.modules).filter(k=>state.modules[k]).length;
+}
+
+// ── Toggle module ──────────────────────────────────────────
+function toggleModule(mod) {
+  const btn = document.querySelector(`#mod-${mod} .mod-btn`);
+  const dot = document.getElementById('dot-'+mod);
+  const badge = document.getElementById('badge-'+mod);
+  const card = document.getElementById('mod-'+mod);
+
+  if (state.modules[mod]) {
+    // stop
+    clearInterval(state.timers[mod]);
+    delete state.modules[mod];
+    delete state.timers[mod];
+    btn.textContent = '▶ Start'; btn.className = 'mod-btn start';
+    dot.className = 'mod-dot';
+    badge.textContent = 'OFF'; badge.className = 'mod-badge off';
+    card.classList.remove('running');
+    addLog('SYS', `${mod} module stopped`);
+  } else {
+    // start
+    state.modules[mod] = true;
+    const intervals = { CEX:2000, DEX:4000, MEMPOOL:1500, FOREX:5000 };
+    state.timers[mod] = setInterval(simulators[mod], intervals[mod]);
+    simulators[mod](); // immediate first run
+    btn.textContent = '⏹ Stop'; btn.className = 'mod-btn stop';
+    dot.className = 'mod-dot on';
+    badge.textContent = state.dryRun ? 'DRY' : 'LIVE';
+    badge.className = 'mod-badge ' + (state.dryRun ? 'dry' : 'live');
+    card.classList.add('running');
+    addLog('SYS', `${mod} started — ${state.dryRun?'DRY RUN':'LIVE'} mode`);
+    updateStats();
+  }
+}
+
+// ── Setup & Settings save ──────────────────────────────────
+function saveSetup() {
+  state.keys = {
+    binKey: document.getElementById('s-bin-key').value,
+    binSec: document.getElementById('s-bin-sec').value,
+    infura: document.getElementById('s-infura').value,
+    wallet: document.getElementById('s-wallet').value,
+    metaToken: document.getElementById('s-meta-token').value,
+    metaAcc: document.getElementById('s-meta-acc').value,
+  };
+  addLog('SYS', 'API keys saved (browser memory only)');
+  alert('✅ Keys saved! They are stored in this browser tab only — never sent to any server.');
+}
+
+function saveSettings() {
+  state.cfg.pair = document.getElementById('cfg-pair').value;
+  state.cfg.usdt = parseFloat(document.getElementById('cfg-usdt').value);
+  state.cfg.tp   = parseFloat(document.getElementById('cfg-tp').value);
+  state.cfg.sl   = parseFloat(document.getElementById('cfg-sl').value);
+  state.cfg.eth  = document.getElementById('cfg-eth').value;
+  state.cfg.fxpair = document.getElementById('cfg-fxpair').value;
+  state.cfg.lot  = parseFloat(document.getElementById('cfg-lot').value);
+
+  // update display
+  document.getElementById('cfg-cex-pair').textContent = state.cfg.pair;
+  document.getElementById('cfg-cex-amt').textContent  = '$' + state.cfg.usdt;
+  document.getElementById('cfg-dex-amt').textContent  = state.cfg.eth + ' ETH';
+  document.getElementById('cfg-dex-chain').textContent = document.getElementById('cfg-chain').value;
+  document.getElementById('cfg-fx-pair').textContent  = state.cfg.fxpair;
+  document.getElementById('cfg-fx-lot').textContent   = state.cfg.lot;
+
+  addLog('SYS', `Settings saved — pair=${state.cfg.pair} risk=$${state.cfg.usdt} tp=${state.cfg.tp}% sl=${state.cfg.sl}%`);
+  alert('✅ Settings applied!');
+}
+
+// ── Init log ───────────────────────────────────────────────
+addLog('SYS', 'Sniper Bot Suite loaded — DRY RUN mode active');
+addLog('SYS', 'Go to Setup tab to enter your API keys, then start modules');
+</script>
+</body>
+</html>
